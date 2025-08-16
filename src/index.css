@@ -67,4 +67,7 @@ button:focus-visible {
   }
 }
 
-@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
