@@ -1,40 +1,55 @@
+/* Tailwind CSS */
+/* stylelint-disable at-rule-no-unknown */
+
+/* Importar primero estilos globales */
+@import "./styles/global.css";
+
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables globales y estilos base */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Enlaces */
 a {
   font-weight: 500;
   color: #646cff;
-  text-decoration: inherit;
+  text-decoration: none;
 }
 a:hover {
   color: #535bf2;
 }
 
+/* Body */
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #242424;
+  color: #ffffff;
+  font-family: inherit;
 }
 
+/* Titulares */
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+/* Botones */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -54,6 +69,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Ajustes para tema claro */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -67,7 +83,12 @@ button:focus-visible {
   }
 }
 
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Layout principal para que el contenido fluya correctamente */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+main {
+  flex: 1;
+}

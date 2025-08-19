@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-function App() {
-  const [count, setCount] = useState(0)
+import Home from './pages/Home';
+import Catalogo from './pages/Catalogo';
+import Producto from './pages/Producto';
+import Carrito from './pages/Carrito';
+import Checkout from './pages/Checkout';
+import Cuenta from './pages/Cuenta';
+import Admin from './pages/Admin';
 
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <Navbar />
+      <main className="p-6">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold">Bienvenido a ClickGo!</h1>
+          <p className="text-gray-700">Explora nuestros productos y disfruta tu experiencia.</p>
+        </div>
 
-export default App
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/catalogo" element={<Catalogo />} />
+          <Route path="/producto" element={<Producto />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/cuenta" element={<Cuenta />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
+      <Footer />
+    </Router>
+  );
+};
+
+export default App;

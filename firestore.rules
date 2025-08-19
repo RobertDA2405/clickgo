@@ -2,8 +2,37 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Users: Solo el usuario puede leer/escribir su doc, admin lee todos
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+    }
+
+    // Products: Todos leen activos, admin CRUD
+    match /products/{productId} {
+      allow read: if resource.data.activo == true;
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+      // Validaciones: precio >=0, stock >=0
+      allow write: if request.resource.data.precio >= 0 && request.resource.data.stock >= 0;
+    }
+
+    // Carts: Solo owner lee/escribe
+    match /carts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Orders: User ve sus orders, admin todos y actualiza
+    match /orders/{orderId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin');
+      allow create: if request.auth != null;  // Llamado desde Cloud Function
+      allow update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+    }
+
+    // Config/envio: Todos leen, admin escribe
+    match /config/envio {
+      allow read: if true;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
     }
   }
 }
