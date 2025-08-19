@@ -1,4 +1,6 @@
-import type { FC, FormEvent } from 'react';
+import type { FC } from 'react';
+
+
 import ProductCard from './ProductCard';
 
 interface ProductGridProps {
