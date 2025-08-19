@@ -9,6 +9,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["react", "@typescript-eslint", "prettier"],
   "rules": {
+    "no-console": "off",
     "prettier/prettier": "error",
     "react/react-in-jsx-scope": "off"
   },
