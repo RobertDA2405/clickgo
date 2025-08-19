@@ -1,6 +1,4 @@
 import type { FC } from 'react';
-
-
 import ProductCard from './ProductCard';
 
 interface ProductGridProps {

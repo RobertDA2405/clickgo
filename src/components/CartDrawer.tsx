@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';  // si usas useState
 
 
 const CartDrawer: FC = () => {
