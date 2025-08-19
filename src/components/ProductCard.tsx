@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import type { FC, FormEvent } from 'react';
 
 interface ProductCardProps {
   product: {

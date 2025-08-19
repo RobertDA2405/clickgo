@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 const Producto = () => (
   <div className="text-center">

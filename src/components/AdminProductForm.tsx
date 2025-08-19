@@ -1,4 +1,4 @@
-import { FC, FormEvent, useState } from 'react';
+import type { FC, FormEvent } from 'react';
 
 const AdminProductForm: FC = () => {
   const [nombre, setNombre] = useState('');
