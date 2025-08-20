@@ -1,5 +1,5 @@
-import type { FC } from 'react';
-import ProductCard from './ProductCard';
+import type { FC } from "react";
+import ProductCard from "./ProductCard";
 
 interface ProductGridProps {
   products: Array<{
@@ -13,7 +13,7 @@ interface ProductGridProps {
 
 const ProductGrid: FC<ProductGridProps> = ({ products }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid justify-center gap-6 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase/client'; // Asegúrate de tener esto
-import { useAuthStore } from './authStore'; // Si tienes auth store
+import { db } from '../firebase/client';
+import { useAuthStore } from './authStore'; // Asumiendo tienes esto
 
 interface CartItem {
   productId: string;
@@ -20,7 +20,7 @@ interface CartState {
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
-  addItem: (newItem) => {
+  addItem: async (newItem) => {  // Hice async para await DB
     const items = get().items;
     const existing = items.find(item => item.productId === newItem.productId);
     if (existing) {
@@ -29,25 +29,35 @@ export const useCartStore = create<CartState>((set, get) => ({
       items.push(newItem);
     }
     set({ items });
-    // Persiste en Firestore (después de auth)
     const user = useAuthStore.getState().user;
     if (user) {
-      setDoc(doc(db, 'carts', user.uid), { items, actualizadoEn: new Date() });
+      await setDoc(doc(db, 'carts', user.uid), { items, actualizadoEn: new Date() });
     }
   },
-  removeItem: (productId) => {
+  removeItem: async (productId) => {
     const items = get().items.filter(item => item.productId !== productId);
     set({ items });
-    // Actualiza DB similar
+    const user = useAuthStore.getState().user;
+    if (user) {
+      await setDoc(doc(db, 'carts', user.uid), { items, actualizadoEn: new Date() });
+    }
   },
-  updateQuantity: (productId, cantidad) => {
+  updateQuantity: async (productId, cantidad) => {
+    if (cantidad < 1) return;
     const items = get().items.map(item => 
       item.productId === productId ? { ...item, cantidad } : item
     );
     set({ items });
-    // Actualiza DB
+    const user = useAuthStore.getState().user;
+    if (user) {
+      await setDoc(doc(db, 'carts', user.uid), { items, actualizadoEn: new Date() });
+    }
   },
-  clearCart: () => set({ items: [] }),
+  clearCart: async () => {
+    set({ items: [] });
+    const user = useAuthStore.getState().user;
+    if (user) {
+      await setDoc(doc(db, 'carts', user.uid), { items: [], actualizadoEn: new Date() });
+    }
+  },
 }));
-
-// Listener para real-time sync (en useEffect global o App)

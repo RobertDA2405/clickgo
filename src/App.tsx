@@ -21,16 +21,18 @@ const App = () => {
           <p className="text-gray-700">Explora nuestros productos y disfruta tu experiencia.</p>
         </div>
 
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/catalogo" element={<Catalogo />} />
-          <Route path="/producto" element={<Producto />} />
-          <Route path="/carrito" element={<Carrito />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/cuenta" element={<Cuenta />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        <div className="max-w-7xl mx-auto px-4 py-10">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/catalogo" element={<Catalogo />} />
+            <Route path="/producto" element={<Producto />} />
+            <Route path="/carrito" element={<Carrito />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/cuenta" element={<Cuenta />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
       </main>
       <Footer />
     </Router>
