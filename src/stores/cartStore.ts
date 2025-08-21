@@ -1,7 +1,8 @@
+// src/stores/cartStore.ts
 import { create } from 'zustand';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase/client';
-import { useAuthStore } from './authStore'; // Asumiendo tienes esto
+import { useAuthStore } from './authStore';
 
 interface CartItem {
   productId: string;
@@ -12,15 +13,15 @@ interface CartItem {
 
 interface CartState {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, cantidad: number) => void;
-  clearCart: () => void;
+  addItem: (item: CartItem) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, cantidad: number) => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
-  addItem: async (newItem) => {  // Hice async para await DB
+  addItem: async (newItem) => {
     const items = get().items;
     const existing = items.find(item => item.productId === newItem.productId);
     if (existing) {
