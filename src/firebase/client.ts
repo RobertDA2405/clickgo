@@ -1,11 +1,9 @@
-// src/firebase/client.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics, type Analytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 
-// Config de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyA9yLXADpsnYUif1tD8DPAiHWGVdK9dDho",
   authDomain: "clickgo-digital.firebaseapp.com",
@@ -29,6 +27,6 @@ isSupported().then((yes) => {
 
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app); // <-- exportamos functions para usar en Checkout
+const functions = getFunctions(app); // <-- agregado para usar httpsCallable
 
 export { db, auth, analytics, functions };

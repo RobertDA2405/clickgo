@@ -1,18 +1,34 @@
 // src/pages/Checkout.tsx
-import { useState } from "react";
-import { useCartStore } from "../stores/cartStore";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase/client";
+import { useState } from 'react';
+import { useCartStore } from '../stores/cartStore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase/client';
 
-interface CreateOrderData {
-  url?: string; // opcional, si luego rediriges a un checkout externo
+interface CartItem {
+  productId: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+}
+
+interface CreateOrderInput {
+  items: CartItem[];
+  envio: { tipo: string; costo: number };
+  direccionEnvio: string;
+  metodoPagoSimulado: string;
+}
+
+interface CreateOrderOutput {
+  url?: string;
+  total?: number;
+  estado?: string;
 }
 
 export default function Checkout() {
   const { items, clearCart } = useCartStore();
-  const [envio, setEnvio] = useState("estandar");
-  const [pago, setPago] = useState("contraentrega");
-  const [direccion, setDireccion] = useState("");
+  const [envio, setEnvio] = useState('estandar');
+  const [pago, setPago] = useState('contraentrega');
+  const [direccion, setDireccion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,28 +42,30 @@ export default function Checkout() {
     setError(null);
 
     try {
-      if (!direccion) throw new Error("Debes ingresar una dirección");
+      const createOrder = httpsCallable<CreateOrderInput, CreateOrderOutput>(
+        functions,
+        'createOrder'
+      );
 
-      // Llamada a Firebase Function
-      const createOrder = httpsCallable<CreateOrderData>(functions, "createOrder");
-      const result = await createOrder({
+      const input: CreateOrderInput = {
         items,
         envio: { tipo: envio, costo: costosEnvio[envio as keyof typeof costosEnvio] },
         direccionEnvio: direccion,
         metodoPagoSimulado: pago,
-      });
+      };
 
-      const data = result.data;
+      const result = await createOrder(input);
+      const data: CreateOrderOutput = result.data;
 
       if (data.url) {
-        window.location.href = data.url; // redirige si la función devuelve URL
+        window.location.href = data.url;
       } else {
-        alert(`Pedido confirmado!\nTotal: $${total.toFixed(2)}\nMétodo: ${pago}`);
-        clearCart();
+        alert('Pedido simulado exitoso! Total: $' + (data.total ?? total).toFixed(2));
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Error desconocido");
+
+      clearCart();
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -87,7 +105,7 @@ export default function Checkout() {
           disabled={loading || items.length === 0}
           className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {loading ? "Procesando..." : "Confirmar Pedido"}
+          {loading ? 'Procesando...' : 'Confirmar Pedido'}
         </button>
       </form>
     </div>
