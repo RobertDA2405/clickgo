@@ -1,6 +1,6 @@
+// src/firebase/client.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics, type Analytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 
@@ -16,17 +16,8 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-
-// Analytics solo si está soportado
-let analytics: Analytics | null = null;
-isSupported().then((yes) => {
-  if (yes) {
-    analytics = getAnalytics(app);
-  }
-});
-
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app); // <-- agregado para usar httpsCallable
+const functions = getFunctions(app);
 
-export { db, auth, analytics, functions };
+export { db, auth, functions };

@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import Home from './pages/Home';
@@ -7,6 +8,7 @@ import Carrito from './pages/Carrito';
 import Checkout from './pages/Checkout';
 import Cuenta from './pages/Cuenta';
 import Admin from './pages/Admin';
+import Pedidos from './pages/Pedidos'; // <-- IMPORTANTE
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -30,6 +32,7 @@ const App = () => {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/cuenta" element={<Cuenta />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/pedidos" element={<Pedidos />} /> {/* <-- RUTA NUEVA */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

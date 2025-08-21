@@ -1,34 +1,16 @@
 // src/pages/Checkout.tsx
-import { useState } from 'react';
-import { useCartStore } from '../stores/cartStore';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase/client';
-
-interface CartItem {
-  productId: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-}
-
-interface CreateOrderInput {
-  items: CartItem[];
-  envio: { tipo: string; costo: number };
-  direccionEnvio: string;
-  metodoPagoSimulado: string;
-}
-
-interface CreateOrderOutput {
-  url?: string;
-  total?: number;
-  estado?: string;
-}
+import { useState } from "react";
+import { useCartStore } from "../stores/cartStore";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase/client";
+import { useAuthStore } from "../stores/authStore";
 
 export default function Checkout() {
   const { items, clearCart } = useCartStore();
-  const [envio, setEnvio] = useState('estandar');
-  const [pago, setPago] = useState('contraentrega');
-  const [direccion, setDireccion] = useState('');
+  const { user } = useAuthStore();
+  const [envio, setEnvio] = useState("estandar");
+  const [pago, setPago] = useState("contraentrega");
+  const [direccion, setDireccion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,32 +20,32 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setError("Debes iniciar sesión para hacer un pedido.");
+      return;
+    }
+    if (items.length === 0) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      const createOrder = httpsCallable<CreateOrderInput, CreateOrderOutput>(
-        functions,
-        'createOrder'
-      );
-
-      const input: CreateOrderInput = {
+      await addDoc(collection(db, "orders"), {
+        userId: user.uid,
         items,
         envio: { tipo: envio, costo: costosEnvio[envio as keyof typeof costosEnvio] },
         direccionEnvio: direccion,
-        metodoPagoSimulado: pago,
-      };
+        metodoPago: pago,
+        total,
+        estado: "Pendiente",
+        fecha: new Date(),
+      });
 
-      const result = await createOrder(input);
-      const data: CreateOrderOutput = result.data;
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert('Pedido simulado exitoso! Total: $' + (data.total ?? total).toFixed(2));
-      }
-
+      alert("Pedido registrado exitosamente!");
       clearCart();
+      setDireccion("");
+      setEnvio("estandar");
+      setPago("contraentrega");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -105,7 +87,7 @@ export default function Checkout() {
           disabled={loading || items.length === 0}
           className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {loading ? 'Procesando...' : 'Confirmar Pedido'}
+          {loading ? "Procesando..." : "Confirmar Pedido"}
         </button>
       </form>
     </div>

@@ -8,10 +8,12 @@ export default function Catalogo() {
   const [search, setSearch] = useState('');
   const { data: allProducts = [], isLoading, error } = useProducts(categoria);
 
-  const products = allProducts.filter(p => p.nombre.toLowerCase().includes(search.toLowerCase()));
+  const products = allProducts.filter(p =>
+    p.nombre.toLowerCase().includes(search.toLowerCase())
+  );
 
   if (isLoading) return <p className="text-center text-gray-600 mt-10">Cargando productos...</p>;
-  if (error) return <p className="text-red-500 text-center mt-10">Error al cargar: {error.message}</p>;
+  if (error) return <p className="text-red-500 text-center mt-10">Error: {error.message}</p>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -34,18 +36,13 @@ export default function Catalogo() {
           <option value="">Todas las categorías</option>
           <option value="electronica">Electrónica</option>
           <option value="ropa">Ropa</option>
-          {/* Añade más categorías según tu DB */}
         </select>
       </div>
-      <div className="flex justify-center">
-        <div className="w-full max-w-[1280px]">
-          {products.length === 0 ? (
-            <p className="text-center text-gray-600">No hay productos disponibles.</p>
-          ) : (
-            <ProductGrid products={products} />
-          )}
-        </div>
-      </div>
+      {products.length === 0 ? (
+        <p className="text-center text-gray-600">No hay productos disponibles.</p>
+      ) : (
+        <ProductGrid products={products} />
+      )}
     </div>
   );
-};
+}
