@@ -24,14 +24,14 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col max-w-[220px] mx-auto">
+    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col">
       {/* Imagen */}
-      <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+      <div className="w-full aspect-[1/1] bg-gray-100 flex items-center justify-center">
         {product.imagenes?.[0] ? (
           <img
             src={product.imagenes[0]}
             alt={product.nombre}
-            className="max-h-full max-w-full object-contain"
+            className="w-full h-full object-contain"
           />
         ) : (
           <span className="text-gray-400">Imagen no disponible</span>
@@ -40,11 +40,17 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
 
       {/* Información */}
       <div className="flex flex-col flex-grow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">{product.nombre}</h3>
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.descripcion}</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
+          {product.nombre}
+        </h3>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {product.descripcion}
+        </p>
 
         <div className="mt-auto">
-          <p className="text-xl font-bold text-blue-600 mb-3">${product.precio.toFixed(2)}</p>
+          <p className="text-xl font-bold text-blue-600 mb-3">
+            ${product.precio.toFixed(2)}
+          </p>
           <button
             onClick={handleAdd}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"

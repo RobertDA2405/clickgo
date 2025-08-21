@@ -1,4 +1,3 @@
-// src/pages/Checkout.tsx
 import { useState } from "react";
 import { useCartStore } from "../stores/cartStore";
 import { collection, addDoc } from "firebase/firestore";
@@ -54,38 +53,67 @@ export default function Checkout() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-gray-800 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-white text-center">Checkout</h2>
+    <div className="max-w-4xl mx-auto mt-10 p-6 bg-gray-800 rounded-xl shadow-lg">
+      <h2 className="text-3xl font-bold mb-6 text-white text-center">Checkout</h2>
+
+      {/* Carrito */}
+      {items.length > 0 && (
+        <div className="mb-6 bg-gray-700 p-4 rounded-lg space-y-3">
+          <h3 className="text-xl font-semibold text-white mb-2">Tu carrito</h3>
+          {items.map((item) => (
+            <div
+              key={item.productId}
+              className="flex justify-between items-center text-white"
+            >
+              <span>{item.nombre} x {item.cantidad}</span>
+              <span>${(item.precio * item.cantidad).toFixed(2)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between mt-3 pt-2 border-t border-gray-600 font-bold text-white">
+            <span>Subtotal:</span>
+            <span>${subtotal.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
           placeholder="Dirección de envío"
-          className="w-full p-2 border rounded bg-gray-700 text-white"
+          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+
         <select
           value={envio}
           onChange={(e) => setEnvio(e.target.value)}
-          className="w-full p-2 border rounded bg-gray-700 text-white"
+          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="estandar">Estándar ($5)</option>
           <option value="express">Express ($10)</option>
         </select>
+
         <select
           value={pago}
           onChange={(e) => setPago(e.target.value)}
-          className="w-full p-2 border rounded bg-gray-700 text-white"
+          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="contraentrega">Contra entrega</option>
           <option value="tarjeta">Tarjeta ficticia</option>
         </select>
-        <p className="text-white font-bold">Total: ${total.toFixed(2)}</p>
+
+        {/* Total */}
+        <div className="text-white font-bold text-xl text-right">
+          Total: ${total.toFixed(2)}
+        </div>
+
         {error && <p className="text-red-500">{error}</p>}
+
         <button
           type="submit"
           disabled={loading || items.length === 0}
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {loading ? "Procesando..." : "Confirmar Pedido"}
         </button>
