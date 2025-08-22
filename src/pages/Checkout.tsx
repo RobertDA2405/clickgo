@@ -53,23 +53,23 @@ export default function Checkout() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-gray-800 rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold mb-6 text-white text-center">Checkout</h2>
+    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md text-gray-900"> {/* Cambio: White fondo, sombra */}
+      <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">Checkout</h2> {/* Cambio: Dark text */}
 
       {/* Carrito */}
       {items.length > 0 && (
-        <div className="mb-6 bg-gray-700 p-4 rounded-lg space-y-3">
-          <h3 className="text-xl font-semibold text-white mb-2">Tu carrito</h3>
+        <div className="mb-6 bg-gray-100 p-4 rounded-lg shadow-sm space-y-3"> {/* Cambio: Light fondo, sombra */}
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Tu carrito</h3> {/* Cambio: Dark text */}
           {items.map((item) => (
             <div
               key={item.productId}
-              className="flex justify-between items-center text-white"
+              className="flex justify-between items-center text-gray-900"
             >
               <span>{item.nombre} x {item.cantidad}</span>
               <span>${(item.precio * item.cantidad).toFixed(2)}</span>
             </div>
           ))}
-          <div className="flex justify-between mt-3 pt-2 border-t border-gray-600 font-bold text-white">
+          <div className="flex justify-between mt-3 pt-2 border-t border-gray-300 font-bold text-gray-900"> {/* Cambio: Dark text */}
             <span>Subtotal:</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
@@ -82,13 +82,13 @@ export default function Checkout() {
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
           placeholder="Dirección de envío"
-          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
         />
 
         <select
           value={envio}
           onChange={(e) => setEnvio(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
         >
           <option value="estandar">Estándar ($5)</option>
           <option value="express">Express ($10)</option>
@@ -97,14 +97,14 @@ export default function Checkout() {
         <select
           value={pago}
           onChange={(e) => setPago(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
         >
           <option value="contraentrega">Contra entrega</option>
           <option value="tarjeta">Tarjeta ficticia</option>
         </select>
 
         {/* Total */}
-        <div className="text-white font-bold text-xl text-right">
+        <div className="text-green-600 font-bold text-xl text-right"> {/* Cambio: Green como Amazon */}
           Total: ${total.toFixed(2)}
         </div>
 
@@ -113,11 +113,11 @@ export default function Checkout() {
         <button
           type="submit"
           disabled={loading || items.length === 0}
-          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-yellow-400 text-gray-900 px-4 py-3 rounded-lg hover:bg-yellow-500 disabled:opacity-50 transition-colors"
         >
           {loading ? "Procesando..." : "Confirmar Pedido"}
         </button>
       </form>
     </div>
   );
-}
+};

@@ -14,9 +14,9 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: light;
+  color: #213547;
+  background-color: #ffffff; /* Cambio: White background for light mode */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,11 +26,11 @@
 /* Enlaces */
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #007185; /* Cambio: Azul como Amazon */
   text-decoration: none;
 }
 a:hover {
-  color: #535bf2;
+  color: #c7511f; /* Cambio: Naranja hover como Amazon */
 }
 
 /* Body */
@@ -38,8 +38,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #242424;
-  color: #ffffff;
+  background-color: #ffffff; /* Cambio: White */
+  color: #000000;
   font-family: inherit;
 }
 
@@ -57,12 +57,13 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #f0c14b; /* Cambio: Amarillo default como Amazon */
+  color: #0f1111; /* Cambio: Dark text */
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  background-color: #ddb347; /* Cambio: Hover amarillo oscuro */
 }
 button:focus,
 button:focus-visible {
@@ -79,7 +80,7 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #f0c14b;
   }
 }
 

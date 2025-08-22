@@ -8,7 +8,7 @@ import Carrito from './pages/Carrito';
 import Checkout from './pages/Checkout';
 import Cuenta from './pages/Cuenta';
 import Admin from './pages/Admin';
-import Pedidos from './pages/Pedidos'; // <-- IMPORTANTE
+import Pedidos from './pages/Pedidos';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -16,28 +16,30 @@ import Footer from './components/Footer';
 const App = () => {
   return (
     <Router>
-      <Navbar />
-      <main className="p-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Bienvenido a ClickGo!</h1>
-          <p className="text-gray-700">Explora nuestros productos y disfruta tu experiencia.</p>
-        </div>
+      <div className="min-h-screen flex flex-col bg-white text-gray-900"> {/* Cambio: White fondo, dark text */}
+        <Navbar />
+        <main className="flex-grow p-6">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-blue-600">Bienvenido a ClickGo!</h1> {/* Cambio: Acento azul */}
+            <p className="text-gray-600">Explora nuestros productos y disfruta tu experiencia.</p> {/* Cambio: Gray */}
+          </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/catalogo" element={<Catalogo />} />
-            <Route path="/producto" element={<Producto />} />
-            <Route path="/carrito" element={<Carrito />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/cuenta" element={<Cuenta />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/pedidos" element={<Pedidos />} /> {/* <-- RUTA NUEVA */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </main>
-      <Footer />
+          <div className="max-w-7xl mx-auto px-4 py-10">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/catalogo" element={<Catalogo />} />
+              <Route path="/producto" element={<Producto />} />
+              <Route path="/carrito" element={<Carrito />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/cuenta" element={<Cuenta />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/pedidos" element={<Pedidos />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </div>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 };
