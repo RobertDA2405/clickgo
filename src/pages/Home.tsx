@@ -72,7 +72,7 @@ export default function Home() {
   const nuevosProductos = productos.slice(8, 12);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+  <div className="container-max py-8">
       {/* Hero Banner Promociones */}
       {promociones.length > 0 && (
         <div className="relative w-full h-64 mb-10 rounded-lg overflow-hidden shadow-lg">
@@ -90,17 +90,17 @@ export default function Home() {
 
       {/* Secciones de productos */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-4 text-gray-100">Productos Destacados</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">Productos Destacados</h2>
         <ProductGrid products={productosDestacados} />
       </section>
 
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-4 text-gray-100">Más Vendidos</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">Más Vendidos</h2>
         <ProductGrid products={masVendidos} />
       </section>
 
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-4 text-gray-100">Nuevos Productos</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">Nuevos Productos</h2>
         <ProductGrid products={nuevosProductos} />
       </section>
     </div>

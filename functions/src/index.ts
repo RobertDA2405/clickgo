@@ -8,21 +8,30 @@
  */
 
 import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
-import * as logger from "firebase-functions/logger";
+// removed unused imports: onRequest, logger
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 
-export const createOrder = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+type OrderItem = { productId: string; nombre: string; precio: number; cantidad: number };
+
+type CreateOrderRequest = {
+  items: OrderItem[];
+  envio?: { tipo?: 'express' | string };
+  direccionEnvio?: unknown;
+  metodoPagoSimulado?: unknown;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const createOrder = functions.https.onCall(async (data: any, context: any) => {
+  if (!context || !context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Debes estar autenticado');
   }
 
   const userId = context.auth.uid;
-  const { items, envio, direccionEnvio, metodoPagoSimulado } = data;
+  const { items, envio, direccionEnvio, metodoPagoSimulado } = data || {} as CreateOrderRequest;
 
   // Validar carrito
   if (!items || items.length === 0) {
@@ -31,7 +40,7 @@ export const createOrder = functions.https.onCall(async (data, context) => {
 
   const db = admin.firestore();
   let subtotal = 0;
-  const productsToUpdate = [];
+  const productsToUpdate: { ref: admin.firestore.DocumentReference; newStock: number }[] = [];
 
   // Transacción para stock atómico
   await db.runTransaction(async (transaction) => {
@@ -42,11 +51,18 @@ export const createOrder = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('not-found', `Producto ${item.productId} no existe`);
       }
       const productData = product.data();
-      if (productData.stock < item.cantidad) {
-        throw new functions.https.HttpsError('failed-precondition', `Stock insuficiente para ${productData.nombre}`);
+      if (!productData) {
+        throw new functions.https.HttpsError('not-found', `Producto ${item.productId} sin datos`);
       }
-      subtotal += productData.precio * item.cantidad;
-      productsToUpdate.push({ ref: productRef, newStock: productData.stock - item.cantidad });
+      const stock = Number(productData.stock ?? 0);
+      const precio = Number(productData.precio ?? 0);
+      if (stock < item.cantidad) {
+        const pd = productData as Record<string, unknown>;
+        const nombre = typeof pd.nombre === 'string' ? pd.nombre : item.productId;
+        throw new functions.https.HttpsError('failed-precondition', `Stock insuficiente para ${nombre}`);
+      }
+      subtotal += precio * item.cantidad;
+      productsToUpdate.push({ ref: productRef, newStock: stock - item.cantidad });
     }
 
     // Actualizar stocks
@@ -55,21 +71,21 @@ export const createOrder = functions.https.onCall(async (data, context) => {
     }
 
     // Calcular total
-    const envioCosto = envio.tipo === 'express' ? 10 : 5;  // Ejemplo costos
+  const envioCosto = envio?.tipo === 'express' ? 10 : 5;  // Ejemplo costos
     const total = subtotal + envioCosto;
 
     // Crear order
     const orderRef = db.collection('orders').doc();
     transaction.set(orderRef, {
       userId,
-      items: items.map((item: any) => ({
+      items: items.map((item: OrderItem) => ({
         productId: item.productId,
         nombre: item.nombre,
         precioUnit: item.precio,  // Usar precio real de DB
         cantidad: item.cantidad,
       })),
       subtotal,
-      envio: { tipo: envio.tipo, costo: envioCosto },
+      envio: { tipo: envio?.tipo || 'standard', costo: envioCosto },
       total,
       direccionEnvio,
       metodoPagoSimulado,
@@ -82,11 +98,17 @@ export const createOrder = functions.https.onCall(async (data, context) => {
 });
 
 // Opcional: setUserRole
-export const setUserRole = functions.https.onCall(async (data, context) => {
-  if (!context.auth || (await admin.firestore().doc(`users/${context.auth.uid}`).get()).data()?.rol !== 'admin') {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const setUserRole = functions.https.onCall(async (data: any, context: any) => {
+  if (!context || !context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes estar autenticado');
+  }
+  const callerDoc = await admin.firestore().doc(`users/${context.auth.uid}`).get();
+  if (callerDoc.data()?.rol !== 'admin') {
     throw new functions.https.HttpsError('permission-denied', 'Solo admin');
   }
-  const { userId, rol } = data;
+  const { userId, rol } = data || {};
+  if (!userId || !rol) throw new functions.https.HttpsError('invalid-argument', 'Parámetros faltantes');
   await admin.firestore().doc(`users/${userId}`).update({ rol });
   return { success: true };
 });
