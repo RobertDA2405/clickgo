@@ -12,13 +12,33 @@ import {setGlobalOptions} from "firebase-functions";
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import cors from 'cors';
+import type * as express from 'express';
 
 admin.initializeApp();
 
-// Use the CORS middleware to reliably handle preflight requests and set
-// Access-Control-Allow-* headers.
-const corsMiddleware = cors({ origin: true, methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] });
+// Si se requiere en otras funciones se puede reintroducir middleware CORS clásico.
+
+// Allowed origins explicit list
+const ALLOWED_ORIGINS = new Set([
+  'https://clickgo.digital',
+  'https://www.clickgo.digital',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+]);
+
+function applyCors(req: express.Request, res: express.Response) {
+  const origin = req.headers.origin || '';
+  if (origin && (ALLOWED_ORIGINS.has(origin))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else {
+    // fallback (no credentials usage so * is fine)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '3600');
+}
 
 // Small type guards were removed because they were not used in this file.
 
@@ -115,15 +135,10 @@ export const createOrder = functions.https.onCall(async (data: unknown, context:
 
 // HTTP wrapper that supports CORS preflight and accepts a Bearer ID token in Authorization header.
 export const createOrderHttp = functions.https.onRequest(async (req, res) => {
-  corsMiddleware(req, res, async () => {
-    try {
-      const origin = req.headers.origin || '*';
-      res.set('Access-Control-Allow-Origin', origin);
-      res.set('Vary', 'Origin');
-      res.set('Access-Control-Allow-Credentials', 'true');
-      res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With');
-      res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+  try {
+    applyCors(req, res);
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+    if (req.method !== 'POST') { res.status(405).json({ error: 'Método no permitido' }); return; }
       const auth = req.get('Authorization') || '';
       if (!auth.startsWith('Bearer ')) {
         res.status(401).json({ error: 'unauthenticated' });
@@ -166,20 +181,20 @@ export const createOrderHttp = functions.https.onRequest(async (req, res) => {
         console.warn('Could not update creadoEnISO', e);
       }
 
-      res.json(result);
-    } catch (err: unknown) {
-      // Mirror HttpsError codes where possible
-      if (err instanceof functions.https.HttpsError) {
-        const he = err as functions.https.HttpsError;
-        const code = he.code === 'unauthenticated' ? 401 : (he.code === 'invalid-argument' ? 400 : 500);
-        res.status(code).set('Access-Control-Allow-Origin', req.headers.origin || '*').json({ error: he.message });
-      } else {
-        console.error('createOrderHttp error', err);
-        const msg = err instanceof Error ? err.message : String(err);
-        res.status(500).set('Access-Control-Allow-Origin', req.headers.origin || '*').json({ error: msg });
-      }
+    res.json(result);
+  } catch (err: unknown) {
+    if (err instanceof functions.https.HttpsError) {
+      const he = err as functions.https.HttpsError;
+      const code = he.code === 'unauthenticated' ? 401 : (he.code === 'invalid-argument' ? 400 : 500);
+      applyCors(req, res);
+      res.status(code).json({ error: he.message });
+    } else {
+      console.error('createOrderHttp error', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      applyCors(req, res);
+      res.status(500).json({ error: msg });
     }
-  });
+  }
 });
 
 // Opcional: setUserRole
@@ -248,16 +263,10 @@ export const cancelOrder = functions.https.onCall(async (data: any, context: any
 
 // HTTP version of cancelOrder with CORS + Bearer token (for browsers that hit auth issues with callable)
 export const cancelOrderHttp = functions.https.onRequest(async (req, res) => {
-  corsMiddleware(req, res, async () => {
-    try {
-      const origin = req.headers.origin || '*';
-      res.set('Access-Control-Allow-Origin', origin);
-      res.set('Vary', 'Origin');
-      res.set('Access-Control-Allow-Credentials', 'true');
-      res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With');
-      res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      if (req.method === 'OPTIONS') { res.status(204).end(); return; }
-      if (req.method !== 'POST') { res.status(405).json({ error: 'Método no permitido' }); return; }
+  try {
+    applyCors(req, res);
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+    if (req.method !== 'POST') { res.status(405).json({ error: 'Método no permitido' }); return; }
       const auth = req.get('Authorization') || '';
       if (!auth.startsWith('Bearer ')) {
         res.status(401).json({ error: 'unauthenticated' });
@@ -298,18 +307,19 @@ export const cancelOrderHttp = functions.https.onRequest(async (req, res) => {
         }
         tx.update(orderRef, { estado: 'Cancelado' });
       });
-  res.json({ success: true });
-    } catch (err) {
-      if (err instanceof functions.https.HttpsError) {
-        const he = err as functions.https.HttpsError;
-        const code = he.code === 'unauthenticated' ? 401 : he.code === 'permission-denied' ? 403 : he.code === 'not-found' ? 404 : 500;
-        res.status(code).json({ error: he.message });
-      } else {
-        const msg = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error: msg });
-      }
+    res.json({ success: true });
+  } catch (err) {
+    if (err instanceof functions.https.HttpsError) {
+      const he = err as functions.https.HttpsError;
+      const code = he.code === 'unauthenticated' ? 401 : he.code === 'permission-denied' ? 403 : he.code === 'not-found' ? 404 : 500;
+      applyCors(req, res);
+      res.status(code).json({ error: he.message });
+    } else {
+      const msg = err instanceof Error ? err.message : String(err);
+      applyCors(req, res);
+      res.status(500).json({ error: msg });
     }
-  });
+  }
 });
 
 // Start writing functions

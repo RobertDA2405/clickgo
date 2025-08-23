@@ -302,7 +302,8 @@ export async function cancelOrderViaFunction(orderId: string) {
   if (typeof window !== 'undefined') {
     try {
       const auth = await getAuthClient();
-      const token = await auth.currentUser?.getIdToken();
+  // Refrescar token para evitar 401 por token expirado
+  const token = await auth.currentUser?.getIdToken(true);
       if (!token) throw new Error('No autenticado');
       const res = await fetch('https://us-central1-clickgo-digital.cloudfunctions.net/cancelOrderHttp', {
         method: 'POST',
