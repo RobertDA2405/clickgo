@@ -115,10 +115,15 @@ export const createOrder = functions.https.onCall(async (data: unknown, context:
 
 // HTTP wrapper that supports CORS preflight and accepts a Bearer ID token in Authorization header.
 export const createOrderHttp = functions.https.onRequest(async (req, res) => {
-  // Delegate CORS handling to the middleware which will handle OPTIONS and
-  // set the appropriate Access-Control-Allow-* headers based on the request.
   corsMiddleware(req, res, async () => {
     try {
+      const origin = req.headers.origin || '*';
+      res.set('Access-Control-Allow-Origin', origin);
+      res.set('Vary', 'Origin');
+      res.set('Access-Control-Allow-Credentials', 'true');
+      res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With');
+      res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      if (req.method === 'OPTIONS') { res.status(204).end(); return; }
       const auth = req.get('Authorization') || '';
       if (!auth.startsWith('Bearer ')) {
         res.status(401).json({ error: 'unauthenticated' });
@@ -167,11 +172,11 @@ export const createOrderHttp = functions.https.onRequest(async (req, res) => {
       if (err instanceof functions.https.HttpsError) {
         const he = err as functions.https.HttpsError;
         const code = he.code === 'unauthenticated' ? 401 : (he.code === 'invalid-argument' ? 400 : 500);
-        res.status(code).json({ error: he.message });
+        res.status(code).set('Access-Control-Allow-Origin', req.headers.origin || '*').json({ error: he.message });
       } else {
         console.error('createOrderHttp error', err);
         const msg = err instanceof Error ? err.message : String(err);
-        res.status(500).json({ error: msg });
+        res.status(500).set('Access-Control-Allow-Origin', req.headers.origin || '*').json({ error: msg });
       }
     }
   });
@@ -245,11 +250,14 @@ export const cancelOrder = functions.https.onCall(async (data: any, context: any
 export const cancelOrderHttp = functions.https.onRequest(async (req, res) => {
   corsMiddleware(req, res, async () => {
     try {
-      if (req.method === 'OPTIONS') return; // handled by cors middleware anyway
-      if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Método no permitido' });
-        return;
-      }
+      const origin = req.headers.origin || '*';
+      res.set('Access-Control-Allow-Origin', origin);
+      res.set('Vary', 'Origin');
+      res.set('Access-Control-Allow-Credentials', 'true');
+      res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, X-Requested-With');
+      res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Método no permitido' }); return; }
       const auth = req.get('Authorization') || '';
       if (!auth.startsWith('Bearer ')) {
         res.status(401).json({ error: 'unauthenticated' });
@@ -290,7 +298,7 @@ export const cancelOrderHttp = functions.https.onRequest(async (req, res) => {
         }
         tx.update(orderRef, { estado: 'Cancelado' });
       });
-      res.json({ success: true });
+  res.json({ success: true });
     } catch (err) {
       if (err instanceof functions.https.HttpsError) {
         const he = err as functions.https.HttpsError;
