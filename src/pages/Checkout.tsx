@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useCartStore } from "../stores/cartStore";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "../firebase/client";
+// Firestore accessed lazily via lazyClient
 import { useAuthStore } from "../stores/authStore";
+// toasts imported dynamically where used to avoid bundling react-hot-toast in the shell
 
 export default function Checkout() {
   const { items, clearCart } = useCartStore();
@@ -26,98 +26,100 @@ export default function Checkout() {
     if (items.length === 0) return;
 
     setLoading(true);
-    setError(null);
-
     try {
-      await addDoc(collection(db, "orders"), {
-        userId: user.uid,
-        items,
-        envio: { tipo: envio, costo: costosEnvio[envio as keyof typeof costosEnvio] },
-        direccionEnvio: direccion,
-        metodoPago: pago,
-        total,
-        estado: "Pendiente",
-        fecha: new Date(),
-      });
+      const { createOrderViaFunction } = await import('../firebase/lazyClient');
+  await createOrderViaFunction({ items: items.map(i => ({ productId: i.productId, nombre: i.nombre, precio: i.precio, cantidad: i.cantidad })), envio: { tipo: envio }, direccionEnvio: { direccion }, metodoPagoSimulado: { metodo: pago } });
 
-      alert("Pedido registrado exitosamente!");
+      // dynamic toast import to avoid bundling react-hot-toast in shell
+      const { toastSuccess } = await import('../utils/toast');
+      await toastSuccess('Pedido registrado exitosamente!');
       clearCart();
-      setDireccion("");
-      setEnvio("estandar");
-      setPago("contraentrega");
+      setDireccion('');
+      setEnvio('estandar');
+      setPago('contraentrega');
+      setPago('contraentrega');
     } catch (err) {
-      setError((err as Error).message);
+  const msg = (err as Error).message;
+  setError(msg);
+  const { toastError } = await import('../utils/toast');
+  await toastError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md text-gray-900"> {/* Cambio: White fondo, sombra */}
-      <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">Checkout</h2> {/* Cambio: Dark text */}
-
-      {/* Carrito */}
-      {items.length > 0 && (
-        <div className="mb-6 bg-gray-100 p-4 rounded-lg shadow-sm space-y-3"> {/* Cambio: Light fondo, sombra */}
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Tu carrito</h3> {/* Cambio: Dark text */}
-          {items.map((item) => (
-            <div
-              key={item.productId}
-              className="flex justify-between items-center text-gray-900"
-            >
-              <span>{item.nombre} x {item.cantidad}</span>
-              <span>${(item.precio * item.cantidad).toFixed(2)}</span>
-            </div>
-          ))}
-          <div className="flex justify-between mt-3 pt-2 border-t border-gray-300 font-bold text-gray-900"> {/* Cambio: Dark text */}
-            <span>Subtotal:</span>
-            <span>${subtotal.toFixed(2)}</span>
+    <div className="container-max py-10 animate-fade-in">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Checkout</h1>
+          <p className="text-slate-600 mt-2 text-sm">Completa los datos para finalizar tu pedido.</p>
+        </div>
+        <div className="grid lg:grid-cols-3 gap-10 items-start">
+          <div className="lg:col-span-2 space-y-8">
+            {items.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 animate-slide-up">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Tu carrito</h2>
+                <ul className="divide-y divide-slate-100">
+                  {items.map(item => (
+                    <li key={item.productId} className="flex justify-between py-3 text-sm">
+                      <span className="font-medium text-slate-800">{item.nombre} x {item.cantidad}</span>
+                      <span className="text-slate-700 font-semibold">${(item.precio * item.cantidad).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex justify-between pt-4 mt-4 border-t border-slate-200 font-semibold text-slate-900">
+                  <span>Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6 animate-slide-up">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Dirección de envío</label>
+                <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número, ciudad" className="input-modern bg-slate-900/70" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de envío</label>
+                  <select value={envio} onChange={(e) => setEnvio(e.target.value)} className="input-modern bg-slate-900/70">
+                    <option value="estandar">Estándar ($5)</option>
+                    <option value="express">Express ($10)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Método de pago</label>
+                  <select value={pago} onChange={(e) => setPago(e.target.value)} className="input-modern bg-slate-900/70">
+                    <option value="contraentrega">Contra entrega</option>
+                    <option value="tarjeta">Tarjeta ficticia</option>
+                  </select>
+                </div>
+              </div>
+              {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-sm font-semibold text-slate-600">Total estimado</span>
+                <span className="text-2xl font-extrabold tracking-tight text-green-600">${total.toFixed(2)}</span>
+              </div>
+              <button type="submit" disabled={loading || items.length === 0} className="btn-modern-primary disabled:opacity-50">
+                {loading ? 'Procesando...' : 'Confirmar Pedido'}
+              </button>
+            </form>
           </div>
+          <aside className="lg:col-span-1 animate-slide-up">
+            <div className="form-surface p-6 text-white">
+              <h2 className="text-lg font-bold mb-4">Resumen rápido</h2>
+              <div className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between"><span>Artículos</span><span>{items.length}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Envío</span><span>${costosEnvio[envio as keyof typeof costosEnvio].toFixed(2)}</span></div>
+              </div>
+              <div className="flex justify-between font-semibold text-base mb-6"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              <p className="text-xs text-slate-300 mb-6">Tus datos se procesan de forma segura y el pago es simulado para fines de demostración.</p>
+              <button type="button" onClick={() => { if (!direccion) setDireccion('Dirección demo 123, Ciudad'); }} className="btn-modern-secondary">Autocompletar demo</button>
+            </div>
+          </aside>
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
-          placeholder="Dirección de envío"
-          className="w-full p-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-        />
-
-        <select
-          value={envio}
-          onChange={(e) => setEnvio(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-        >
-          <option value="estandar">Estándar ($5)</option>
-          <option value="express">Express ($10)</option>
-        </select>
-
-        <select
-          value={pago}
-          onChange={(e) => setPago(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-        >
-          <option value="contraentrega">Contra entrega</option>
-          <option value="tarjeta">Tarjeta ficticia</option>
-        </select>
-
-        {/* Total */}
-        <div className="text-green-600 font-bold text-xl text-right"> {/* Cambio: Green como Amazon */}
-          Total: ${total.toFixed(2)}
-        </div>
-
-        {error && <p className="text-red-500">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading || items.length === 0}
-          className="w-full bg-yellow-400 text-gray-900 px-4 py-3 rounded-lg hover:bg-yellow-500 disabled:opacity-50 transition-colors"
-        >
-          {loading ? "Procesando..." : "Confirmar Pedido"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

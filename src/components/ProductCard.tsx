@@ -2,6 +2,7 @@ import type { FC } from "react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/cartStore";
 
+
 interface ProductCardProps {
   product: {
     id: string;
@@ -9,12 +10,13 @@ interface ProductCardProps {
     precio: number;
     imagenes?: string[];
     descripcion: string;
-    rating?: number; // Nuevo: Para rating dinámico de DB
+  stock?: number;
   };
 }
 
 const ProductCard: FC<ProductCardProps> = ({ product }) => {
   const addItem = useCartStore((state) => state.addItem);
+  // wishlist button removed for a cleaner product card UI
 
   const handleAdd = () => {
     // Fly-to-cart animation: clone image and animate to cart badge
@@ -47,64 +49,74 @@ const ProductCard: FC<ProductCardProps> = ({ product }) => {
     addItem({ productId: product.id, nombre: product.nombre, precio: product.precio, cantidad: 1 });
   };
 
-  const rating = Math.max(0, Math.min(5, product.rating ?? 4.5)); // Clamp 0-5
+  // ratings removed - deliberate
 
   return (
-    <div className="product-card card-hover shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col mx-auto transform group-hover:-translate-y-1">
-      <div className="w-full bg-gray-100 overflow-hidden rounded-t flex items-center justify-center" style={{height: 220}}>
+    <div className="product-card card-hover shadow-md hover:shadow-xl transition-shadow duration-300 mx-auto transform group-hover:-translate-y-1">
+      <div className="w-full bg-gray-100 overflow-hidden rounded-t product-image">
         {product.imagenes?.[0] ? (
-          <Link to={`/producto/${product.id}`} className="block h-full flex items-center justify-center w-full">
+          <Link to={`/producto/${encodeURIComponent(product.id)}`} className="block w-full h-full">
             <img
               src={product.imagenes[0]}
               alt={product.nombre}
-              className="max-h-full object-contain mx-auto"
-              style={{maxWidth: '90%'}}
+              className="object-contain"
+              loading="lazy"
             />
           </Link>
         ) : (
-          <span className="text-gray-500">Imagen no disponible</span>
+          <div className="w-full h-full flex items-center justify-center"><span className="text-gray-500">Imagen no disponible</span></div>
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-grow min-h-[220px]">
-        <Link to={`/producto/${product.id}`} className="block">
+  <div className="p-4 flex flex-col flex-grow min-h-[140px] bg-transparent">
+  <Link to={`/producto/${encodeURIComponent(product.id)}`} className="block">
           <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
             {product.nombre}
           </h3>
         </Link>
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          <p className="text-sm text-gray-600 mb-3">
             {product.descripcion}
           </p>
 
-          <div className="mt-auto space-y-3 text-center sm:text-left">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-2xl font-extrabold text-gray-900">${product.precio.toFixed(2)}</p>
-              <div className="text-yellow-400 text-sm flex items-center gap-2" aria-hidden>
-                {"★".repeat(Math.floor(rating)) + "☆".repeat(5 - Math.floor(rating))}
+            <div className="mt-auto space-y-3 text-center sm:text-left">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-2xl font-extrabold text-gray-900">${product.precio.toFixed(2)}</p>
+              </div>
+
+              <div className="text-sm text-gray-700">
+                {typeof product.stock === 'number' ? (
+                  product.stock > 0 ? (
+                    <span className="text-green-600 font-medium">En stock: {product.stock}</span>
+                  ) : (
+                    <span className="text-red-600 font-medium">Agotado</span>
+                  )
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* wishlist button intentionally removed */}
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof product.stock === 'number' && product.stock <= 0) return;
+                    handleAdd();
+                  }}
+                  className={`flex-1 inline-flex items-center justify-center gap-2 py-2 px-4 rounded shadow-sm transition-colors font-semibold ${typeof product.stock === 'number' && product.stock <= 0 ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600 text-gray-900'}`}
+                  aria-label={`Añadir ${product.nombre} al carrito`}
+                  aria-disabled={typeof product.stock === 'number' && product.stock <= 0}
+                  disabled={typeof product.stock === 'number' && product.stock <= 0}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H6.4" stroke="#111827" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Añadir
+                </button>
               </div>
             </div>
-
-            <div className="text-sm text-gray-600">
-              <span className="sr-only">Valoración: {rating} de 5</span>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleAdd();
-              }}
-              className="w-full inline-flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 py-2 px-4 rounded shadow-sm transition-colors font-semibold"
-              aria-label={`Añadir ${product.nombre} al carrito`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M3 3h2l.4 2M7 13h10l4-8H6.4" stroke="#111827" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Añadir
-            </button>
           </div>
         </div>
-    </div>
   );
 };
 

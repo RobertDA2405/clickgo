@@ -1,8 +1,7 @@
 // src/pages/Home.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase/client";
+// Firestore is loaded lazily to keep the initial bundle small
 import ProductGrid from "../components/ProductGrid";
 
 interface Promocion {
@@ -25,22 +24,28 @@ export default function Home() {
 
   // Fetch promociones
   const fetchPromociones = async (): Promise<Promocion[]> => {
-    const snapshot = await getDocs(collection(db, "promociones"));
+    const { getDb } = await import('../firebase/lazyClient');
+    const db = await getDb();
+    const { collection, getDocs } = await import('firebase/firestore');
+    const snapshot = await getDocs(collection(db as unknown as Parameters<typeof collection>[0], "promociones"));
     return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Promocion, "id">) }));
   };
 
   // Fetch productos
   const fetchProductos = async (): Promise<Producto[]> => {
-    const snapshot = await getDocs(collection(db, "products"));
+    const { getDb } = await import('../firebase/lazyClient');
+    const db = await getDb();
+    const { collection, getDocs } = await import('firebase/firestore');
+    const snapshot = await getDocs(collection(db as unknown as Parameters<typeof collection>[0], "products"));
     return snapshot.docs.map((doc) => {
-      const data = doc.data();
+      const data = doc.data() as Record<string, unknown>;
       return {
         id: doc.id,
-        nombre: data.nombre,
-        precio: data.precio,
-        descripcion: data.descripcion,
-        imagenes: data.imagenes ?? [],
-      };
+        nombre: typeof data.nombre === 'string' ? data.nombre : '',
+        precio: typeof data.precio === 'number' ? data.precio : (typeof data.precio === 'string' ? Number(data.precio) || 0 : 0),
+        descripcion: typeof data.descripcion === 'string' ? data.descripcion : '',
+        imagenes: Array.isArray(data.imagenes) ? data.imagenes.filter((i): i is string => typeof i === 'string') : [],
+      } as Producto;
     });
   };
 
@@ -54,17 +59,56 @@ export default function Home() {
     queryFn: fetchProductos,
   });
 
-  // Rotar promociones automáticamente
+  // Rotar promociones automáticamente, con pausa en hover y soporte teclado
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const announcerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (promociones.length === 0) return;
+    let mounted = true;
+    let paused = false;
     const interval = setInterval(() => {
-      setPromoIndex((prev) => (prev + 1) % promociones.length);
+      if (!paused && mounted) setPromoIndex((prev) => (prev + 1) % promociones.length);
     }, 5000);
-    return () => clearInterval(interval);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setPromoIndex((p) => (p + 1) % promociones.length);
+      if (e.key === 'ArrowLeft') setPromoIndex((p) => (p - 1 + promociones.length) % promociones.length);
+    };
+
+    const el = heroRef.current;
+    const onEnter = () => { paused = true; };
+    const onLeave = () => { paused = false; };
+    window.addEventListener('keydown', onKey);
+    el?.addEventListener('mouseenter', onEnter);
+    el?.addEventListener('mouseleave', onLeave);
+
+    return () => { mounted = false; window.removeEventListener('keydown', onKey); el?.removeEventListener('mouseenter', onEnter); el?.removeEventListener('mouseleave', onLeave); clearInterval(interval); };
   }, [promociones]);
 
+  // Announce current slide to screen readers
+  useEffect(() => {
+    if (!announcerRef.current || promociones.length === 0) return;
+    // Small timeout to ensure DOM update
+    const t = setTimeout(() => {
+      announcerRef.current!.textContent = `Promoción ${promoIndex + 1} de ${promociones.length}: ${promociones[promoIndex].titulo}`;
+    }, 100);
+    return () => clearTimeout(t);
+  }, [promoIndex, promociones]);
+
   if (loadingPromo || loadingProd) {
-    return <p className="text-center text-gray-600 mt-10">Cargando...</p>;
+    return (
+      <div className="container-max py-8 content-pad">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Bienvenido a Click&Go</h1>
+          <p className="text-gray-600">Explora nuestros productos y disfruta tu experiencia.</p>
+        </div>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse bg-gray-100 rounded-lg h-48"></div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const productosDestacados = productos.slice(0, 4);
@@ -72,18 +116,39 @@ export default function Home() {
   const nuevosProductos = productos.slice(8, 12);
 
   return (
-  <div className="container-max py-8">
+  <div className="container-max py-8 content-pad">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Bienvenido a Click&Go</h1>
+        <p className="text-gray-600">Explora nuestros productos y disfruta tu experiencia.</p>
+  <div className="mt-4">
+          <a href="/catalogo" className="inline-block bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-4 py-2 rounded font-semibold">Ver catálogo</a>
+        </div>
+      </div>
+
       {/* Hero Banner Promociones */}
       {promociones.length > 0 && (
-        <div className="relative w-full h-64 mb-10 rounded-lg overflow-hidden shadow-lg">
+        <div ref={heroRef} className="relative w-full h-64 mb-10 rounded-lg overflow-hidden shadow-lg" role="region" aria-roledescription="carousel" aria-label="Promociones">
           <img
+            key={promociones[promoIndex].id + promoIndex}
             src={promociones[promoIndex].imagen}
             alt={promociones[promoIndex].titulo}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover hero-slide-enter"
+            loading="lazy"
           />
+          {/* Visually hidden live region for screen readers */}
+          <div ref={announcerRef} className="sr-only" aria-live="polite" aria-atomic="true"></div>
           <div className="absolute bottom-0 left-0 p-4 bg-black bg-opacity-40 text-white w-full">
             <h3 className="text-xl font-bold">{promociones[promoIndex].titulo}</h3>
             <p className="text-sm">{promociones[promoIndex].descripcion}</p>
+          </div>
+          <div className="absolute top-2 right-2 flex gap-2">
+            <button aria-label="Anterior" onClick={() => setPromoIndex((p) => (p - 1 + promociones.length) % promociones.length)} className="bg-white bg-opacity-60 hover:bg-opacity-80 rounded-full p-2">◀</button>
+            <button aria-label="Siguiente" onClick={() => setPromoIndex((p) => (p + 1) % promociones.length)} className="bg-white bg-opacity-60 hover:bg-opacity-80 rounded-full p-2">▶</button>
+          </div>
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
+            {promociones.map((_, i) => (
+              <button key={i} onClick={() => setPromoIndex(i)} aria-label={`Ir a slide ${i + 1}`} className={`w-2 h-2 rounded-full ${i === promoIndex ? 'bg-white' : 'bg-white bg-opacity-40'}`}></button>
+            ))}
           </div>
         </div>
       )}

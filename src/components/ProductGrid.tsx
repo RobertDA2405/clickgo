@@ -13,7 +13,7 @@ interface ProductGridProps {
 
 const ProductGrid: FC<ProductGridProps> = ({ products }) => {
   return (
-  <div className="product-grid grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"> {/* Aumentado gap para separación visual */}
+  <div className="product-grid grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 stagger-fade"> {/* Aumentado gap + animación stagger */}
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

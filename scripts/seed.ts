@@ -11,7 +11,7 @@ async function seedProducts() {
     // Más
   ];
   for (const p of products) {
-    await addDoc(collection(db, 'products'), p);
+  await addDoc(collection(db, 'products'), { ...p, nombreLower: (p.nombre || '').toLowerCase() });
   }
   console.log('Seeded');
 }

@@ -1,8 +1,5 @@
 /* Estilos globales adicionales */
-/* Swiper imports - must be before other rules to satisfy PostCSS @import ordering */
-@import "swiper/css";
-@import "swiper/css/navigation";
-@import "swiper/css/zoom";
+/* Swiper CSS is imported lazily by the ProductGallery component to avoid shipping it in the main bundle */
 body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, "Noto Sans", 'Liberation Sans', sans-serif;
   background-color: var(--bg);
@@ -12,20 +9,21 @@ body {
 :root{
   --bg: #f6f7fb;
   --card: #ffffff;
-  --accent: #f59e0b; /* yellow-400 */
+  --accent: #ffd54a; /* brighter yellow (preferred) */
   --primary: #1e40af; /* blue-800 */
   --text: #0f172a;
   --nav-height: 64px;
   --z-nav: 1000;
   --z-overlay: 9999;
+  --focus-ring: 0 0 0 3px rgba(255,213,74,0.55), 0 0 0 6px rgba(255,213,74,0.25);
 }
 
 .container-max{
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 1.25rem; /* slightly bigger gutters for breathing room */
+  padding-right: 1.25rem;
 }
 
 .card-hover{
@@ -35,33 +33,159 @@ body {
   transform: translateY(-4px);
 }
 
+/* Generic fade / slide animations */
+.animate-fade-in { animation: fade-in .45s ease both; }
+.animate-slide-up { animation: slide-up .55s cubic-bezier(.16,.84,.44,1) both; }
+@keyframes fade-in { from { opacity:0 } to { opacity:1 } }
+@keyframes slide-up { from { opacity:0; transform: translateY(18px); } to { opacity:1; transform: translateY(0); } }
+
+/* Modern input styles (opt-in) */
+.input-modern {
+  width: 100%;
+  background: #0f172a;
+  background: linear-gradient(#0f172a,#1e293b) padding-box, linear-gradient(135deg, rgba(255,213,74,.4), rgba(255,213,74,.05)) border-box;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-size: .9rem;
+  line-height: 1.2;
+  transition: border-color .18s, background .25s;
+}
+.input-modern:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+.input-modern::placeholder { color: #64748b; }
+.textarea-modern { min-height: 120px; resize: vertical; }
+
+/* Form card */
+.form-surface {
+  background: linear-gradient(145deg,#0f1f3a,#162d55 60%,#1d3a6c);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 4px 18px -2px rgba(15,23,42,0.65), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  border-radius: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  color: #f1f5f9; /* high contrast text by default */
+}
+.form-surface:before { content:""; position:absolute; inset:0; background: radial-gradient(circle at 85% 15%, rgba(255,213,74,0.15), transparent 55%); pointer-events:none; }
+
+.form-section-title { font-size: .75rem; letter-spacing:.1em; text-transform: uppercase; font-weight:600; color: #93c5fd; margin-bottom:.75rem; }
+
+/* Buttons */
+.btn-modern-primary { background: linear-gradient(135deg,#2563eb,#1e3a8a); color:#fff; font-weight:600; padding:.85rem 1.1rem; border-radius:.85rem; width:100%; transition: filter .18s, transform .18s; box-shadow:0 2px 8px -1px rgba(37,99,235,.45); }
+.btn-modern-primary:hover { filter: brightness(1.08); }
+.btn-modern-primary:active { transform: translateY(1px); }
+.btn-modern-secondary { background:#ffd54a; color:#111827; font-weight:600; padding:.75rem 1rem; border-radius:.75rem; width:100%; transition: background .18s, transform .18s; box-shadow:0 1px 3px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,0.15) inset; }
+.btn-modern-secondary:hover { background:#ffe172; }
+.btn-modern-secondary:active { transform: translateY(1px); }
+
+/* Order card improvements */
+.order-card { position:relative; border:1px solid #e2e8f0; border-left:6px solid transparent; transition: box-shadow .25s, transform .25s; }
+.order-card[data-status="Pendiente"] { border-left-color:#facc15; }
+.order-card[data-status="Cancelado"] { border-left-color:#f87171; }
+.order-card[data-status="Completado"], .order-card[data-status="Entregado"] { border-left-color:#22c55e; }
+.order-card:hover { box-shadow:0 6px 22px -4px rgba(0,0,0,0.15); transform: translateY(-2px); }
+
+.badge { display:inline-flex; align-items:center; gap:.35rem; font-size:.65rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; padding:.4rem .65rem; border-radius: 2rem; background: #e2e8f0; color:#1e293b; }
+.badge-pendiente { background:#fef9c3; color:#854d0e; }
+.badge-cancelado { background:#fee2e2; color:#991b1b; }
+.badge-completado, .badge-entregado { background:#dcfce7; color:#14532d; }
+
+/* Pulse animation for pending */
+.badge-pendiente { position:relative; }
+.badge-pendiente:before { content:""; position:absolute; inset:0; border-radius:inherit; background:rgba(250,204,21,0.55); opacity:0; animation: badge-pulse 2.2s ease-in-out infinite; }
+@keyframes badge-pulse { 0%{ transform:scale(1); opacity:0;} 40%{opacity:.55;} 70%{opacity:0; transform:scale(1.8);} 100%{ opacity:0; transform:scale(1);} }
+
+/* Stagger animation utility: items inside .stagger-fade get progressive delays */
+.stagger-fade > * { opacity:0; animation: fade-in .55s ease forwards; }
+.stagger-fade > *:nth-child(1){ animation-delay:.05s; }
+.stagger-fade > *:nth-child(2){ animation-delay:.12s; }
+.stagger-fade > *:nth-child(3){ animation-delay:.19s; }
+.stagger-fade > *:nth-child(4){ animation-delay:.26s; }
+.stagger-fade > *:nth-child(5){ animation-delay:.33s; }
+.stagger-fade > *:nth-child(6){ animation-delay:.40s; }
+.stagger-fade > *:nth-child(7){ animation-delay:.47s; }
+.stagger-fade > *:nth-child(8){ animation-delay:.54s; }
+
+/* Lightbox enhancements */
+.lightbox-overlay{ position: fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.82); z-index: calc(var(--z-overlay) + 10); backdrop-filter: blur(6px); animation: fade-in .25s ease; }
+.lightbox-content{ position:relative; max-width:92vw; max-height:82vh; display:flex; flex-direction:column; align-items:center; animation: scale-in .35s cubic-bezier(.16,.84,.44,1); }
+.lightbox-img{ max-width:100%; max-height:70vh; object-fit:contain; border-radius: .75rem; box-shadow:0 8px 32px -4px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,0.08) inset; }
+.lightbox-close, .lightbox-nav{ background:rgba(255,255,255,0.08); backdrop-filter: blur(4px); border:1px solid rgba(255,255,255,0.15); width:42px; height:42px; display:flex; align-items:center; justify-content:center; border-radius:999px; cursor:pointer; transition: background .18s, transform .18s; }
+.lightbox-close:hover, .lightbox-nav:hover{ background:rgba(255,255,255,0.16); }
+.lightbox-close:active, .lightbox-nav:active{ transform:scale(.95); }
+.lightbox-close{ position:absolute; top:18px; right:22px; font-size:20px; color:#fff; }
+.lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); font-size:22px; color:#fff; }
+.lightbox-nav.left{ left:28px; }
+.lightbox-nav.right{ right:28px; }
+.lightbox-caption{ margin-top:.75rem; font-size:.75rem; letter-spacing:.1em; color:#f1f5f9; text-transform:uppercase; }
+@keyframes scale-in { from { transform: scale(.9); opacity:0 } to { transform: scale(1); opacity:1 } }
+
+/* Hero banner subtle fade for slides (applied inline via class) */
+.hero-slide-enter{ animation: fade-in .6s ease; }
+
+/* Account avatar pulse ring */
+.account-avatar{ position:relative; }
+.account-avatar:before{ content:""; position:absolute; inset:-4px; border-radius:999px; background: radial-gradient(circle at 30% 30%, rgba(255,213,74,0.35), transparent 70%); opacity:.65; filter:blur(6px); animation: avatar-glow 4s linear infinite; }
+@keyframes avatar-glow { 0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
+
+/* Product detail tweaks */
+.product-detail{ animation: fade-in .4s ease; }
+.product-detail .sticky-buy{ animation: slide-up .55s cubic-bezier(.16,.84,.44,1); }
+
+/* Utility to add safe side padding to any full-width text block */
+.safe-pad{ padding-left:1rem; padding-right:1rem; }
+@media (min-width:640px){ .safe-pad{ padding-left:1.25rem; padding-right:1.25rem; } }
+
+/* Utility spacing to avoid text flush against edges */
+.content-edge-pad { padding-left:1rem; padding-right:1rem; }
+@media (min-width:640px){ .content-edge-pad { padding-left:1.25rem; padding-right:1.25rem; } }
+
 .main-with-navbar{
   /* ensure main content doesn't hide under fixed navbar on small screens */
   padding-top: calc(var(--nav-height) + 1rem) !important;
+  padding-bottom: 4rem; /* give space so footer doesn't visually overlap small pages */
 }
 
 /* Strong overrides to ensure navbar renders as a horizontal bar */
 .main-nav {
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
+  /* use nav-inner to distribute space, avoid centering all children which caused overlap */
+  justify-content: flex-start !important;
   height: var(--nav-height) !important;
-  background: linear-gradient(180deg, var(--primary), color-mix(in srgb, var(--primary) 85%, black 15%)) !important;
+  /* softer, modern gradient */
+  background: linear-gradient(180deg, #2b5bd7 0%, #1e40af 100%) !important;
   color: #fff !important;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 0 0.5rem !important;
 }
 .main-nav .nav-inner {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
   gap: 1rem !important;
   padding: 0 0.5rem !important;
 }
+
+/* force a three-column layout: logo | centered search | right controls */
+.main-nav .logo { flex: 0 0 auto; }
+.main-nav .nav-search { flex: 1 1 420px; display: flex; justify-content: center; min-width:0; }
+.main-nav .nav-search { margin-right: 2.5rem !important; }
+.main-nav .nav-right { flex: 0 0 auto; display:flex; align-items:center; gap:0.75rem; white-space:nowrap; }
+.main-nav .search-form { width: 100%; max-width: 420px; min-width: 140px; }
+.main-nav .search-form[style] { max-width: 360px !important; }
+.main-nav .nav-inner { flex-wrap: nowrap; }
+.main-nav .search-form input { padding: 0.5rem 0.75rem; }
+
 .main-nav .navbar-links {
   display: flex !important;
-  gap: 1rem !important;
+  gap: 1.25rem !important; /* slightly larger and uniform gap */
   align-items: center !important;
+  position: relative !important;
+  z-index: 2500 !important;
 }
 .main-nav .navbar-links a { display: inline-block !important; }
 .main-nav .logo { font-size: 1rem !important; line-height: 1 !important; }
@@ -80,9 +204,77 @@ body {
 /* Ensure SVG icons inherit the nav color */
 .main-nav svg { color: inherit !important; }
 
+/* cart icon accent */
+.cart-icon { color: var(--accent) !important; }
+.cart-icon path { fill: var(--accent) !important; }
+
 /* Button tweaks inside the nav so they don't clash on dark background */
 .main-nav .bg-blue-600 { background-color: #ffd54a !important; color: #0f172a !important; }
 .main-nav .bg-red-500 { background-color: #ffb4a2 !important; color: #0f172a !important; }
+
+/* Desktop login button styling to avoid huge highlighted block */
+.main-nav .login-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.25rem 0.6rem !important;
+  font-weight: 600 !important;
+  border-radius: 9999px !important; /* pill */
+  line-height: 1 !important;
+  background: #ffd54a !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset;
+}
+
+/* Desktop popover menu (new) */
+.main-nav .desktop-popover-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: popfade .22s ease;
+}
+.main-nav .desktop-popover {
+  width: 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255,213,74,0.35);
+  background: linear-gradient(135deg,#103a8c 0%, #1e3fa5 60%, #244bb8 100%);
+  box-shadow: 0 6px 28px -4px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  transform: scale(.92);
+  opacity: 0;
+  animation: popscale .25s cubic-bezier(.16,.84,.44,1) forwards;
+}
+@keyframes popfade { from { opacity:0; } to { opacity:1; } }
+@keyframes popscale { to { transform: scale(1); opacity:1; } }
+.main-nav .desktop-popover-link {
+  display: block;
+  background: #ffd54a;
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  line-height: 1.1;
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 1px 3px rgba(0,0,0,0.35);
+  transition: background .18s ease, transform .18s ease;
+}
+.main-nav .desktop-popover-link:hover { background:#ffe172; }
+.main-nav .desktop-popover-link:active { transform: translateY(1px); }
+.main-nav .desktop-popover-link:focus { outline:2px solid #ffe172; outline-offset:2px; }
+
+/* avoid large highlighted block behind text when selected */
+.main-nav .login-link::selection{ background: transparent !important; }
+
+/* Ensure cart icon aligns vertically with other nav items */
+.main-nav .cart-trigger { display:flex !important; align-items:center !important; }
 
 /* Specific navbar control styles */
 .nav-logout { background-color: transparent !important; border: 1px solid rgba(255,255,255,0.12) !important; color: #fff !important; }
@@ -90,8 +282,9 @@ body {
 .login-link { background-color: #ffd54a !important; color: #0f172a !important; }
 .login-link:hover { filter: brightness(.95) !important; }
 
-/* Align search input and cart icon on the same line in nav */
-.main-nav input[aria-label="Buscar productos"] { height: 28px !important; margin-right: 0.6rem !important; }
+.main-nav input[aria-label="Buscar productos"] { height: 28px !important; margin-right: 0 !important; padding-right: 0.6rem; }
+.main-nav .greeting { color: var(--accent) !important; font-weight:700 !important; text-shadow: 0 1px 0 rgba(0,0,0,0.28) !important; padding: 0 0.25rem !important; }
+.main-nav .nav-right { gap: 1rem !important; }
 .main-nav .cart-trigger { margin-left: 0.5rem !important; }
 .main-nav .cart-trigger svg { vertical-align: middle !important; }
 
@@ -116,15 +309,48 @@ body {
   overflow: auto !important;
 }
 
-/* Main navigation bar styling */
-.main-nav { display: block; width: 100%; background: var(--card); }
-.main-nav .nav-inner { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
-.main-nav .logo { display:inline-block; padding:0.25rem 0.5rem; }
-.main-nav .navbar-links a { display:inline-block; padding:0.5rem; }
+/* Main navigation bar: primary rules are defined above; remove duplicate/contradictory rules.
+  Ensure logo image fits the nav height and keeps aspect ratio. */
+.main-nav .logo img { height: calc(var(--nav-height) - 22px) !important; width: auto; display: block; margin-right: 0.6rem; }
+
+/* subtle transition for nav items */
+.main-nav .nav-inner a, .main-nav button { transition: transform .12s ease, opacity .12s ease, background-color .12s ease; }
+
+/* cart preview: animate appearance and keep it accessible when present */
+.cart-preview {
+  position: absolute; top: calc(var(--nav-height) + 0.5rem); right: 0; z-index:60; transform: translateY(6px);
+  opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease;
+}
+.cart-trigger:hover .cart-preview, .cart-trigger:focus-within .cart-preview {
+  transform: translateY(0); opacity: 1; pointer-events: auto;
+}
+
+/* refined cart badge */
+.cart-badge{
+  min-width: 18px; height: 18px; padding: 0 4px; font-size: 11px; line-height: 18px;
+  border-radius: 9999px; box-shadow: 0 2px 6px rgba(2,6,23,0.12); text-align:center;
+}
+.cart-badge.pulse{ transform: scale(1.08); }
+
+/* Focus-visible outlines for keyboard users */
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid rgba(59,130,246,0.18); outline-offset: 3px; }
 
 /* Mobile overlay adjustments */
 .mobile-overlay-pane { padding:1rem; box-shadow: 0 8px 30px rgba(2,6,23,0.12); }
 .mobile-overlay-pane a { display:block; }
+.mobile-overlay-pane a.block { border-radius: 8px; }
+.mobile-overlay-pane a:hover { background: rgba(2,6,23,0.04); }
+.mobile-overlay-pane a { padding: 0.6rem 0.75rem; font-size: 1rem; }
+.mobile-overlay-pane nav a { margin-bottom: 0.5rem; }
+
+/* mobile navbar heart icon: make stroke and fill yellow for better contrast on blue background */
+.heart-icon { color: var(--accent) !important; stroke: var(--accent) !important; fill: var(--accent) !important; }
+
+/* menu toggle: ensure icon is visible and tappable on mobile */
+.menu-toggle { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.14) !important; padding: 8px !important; border-radius: 10px !important; box-shadow: 0 1px 0 rgba(0,0,0,0.12) inset, 0 4px 14px rgba(2,6,23,0.12); z-index: 2200 !important; }
+.menu-toggle svg { color: #fff !important; stroke: #fff !important; width: 20px; height: 20px; }
+
+/* (legacy fallback removed) */
 
 /* Limit login button width inside mobile overlay so it doesn't stretch full width */
 .mobile-overlay-pane .login-link { max-width: 220px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
@@ -137,14 +363,63 @@ body {
   .main-nav .logo { font-size: 1.0rem; }
 }
 
+/* ensure search contrasts against blue background */
+.main-nav .search-form { background: transparent !important; }
+/* Make the actual search input visually white while removing the white box on the right
+   so any extra padding or controls inside the form blend with the nav background. */
+.main-nav .search-form input,
+.main-nav .search-form input[type="search"] {
+  background: rgba(255,255,255,0.98) !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(2,6,23,0.06) !important;
+  padding: 0.4rem 0.6rem !important;
+  box-shadow: 0 1px 0 rgba(2,6,23,0.04) inset;
+}
+
+
+
 @media (min-width: 768px) {
   .mobile-overlay-pane { display:none !important; }
 }
+/* Larger screens: expand search width and padding for laptop and TV */
+
+@media (min-width: 992px) {
+  .main-nav .search-form { max-width: 480px; }
+  .main-nav .nav-inner { padding: 0 1rem !important; }
+}
+
+@media (min-width: 1200px) {
+  .main-nav { --nav-height: 72px; }
+  .main-nav .logo img { height: calc(var(--nav-height) - 22px); }
+  .main-nav .search-form { max-width: 520px; }
+  .main-nav .nav-inner { max-width: 1600px; padding: 0 2rem !important; }
+}
+
+@media (min-width: 1600px) {
+  .main-nav .search-form { max-width: 840px; }
+  .main-nav .navbar-links { gap: 1.5rem !important; }
+}
+
+/* Small screens: reduce visible chrome - hide text greetings and show compact icons only */
+@media (max-width: 767px) {
+  .nav-right .login-link { display: none !important; }
+  .nav-right a.text-sm { display:none !important; }
+}
+
+/* ensure mobile-action icons are visible even on dark gradient */
+.mobile-action svg { color: var(--accent) !important; }
+
+/* Ensure the search won't force other items to wrap by allowing it to shrink */
+.main-nav .nav-search { min-width: 0; }
 
 .product-card {
   background: var(--card);
   border-radius: 0.5rem;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem; /* ensure cards don't touch each other */
 }
 
 .mini-cart{
@@ -191,6 +466,12 @@ body {
 /* Form elements */
 input, select, button { font-family: inherit; }
 
+/* Content padding: apply to main content wrappers to keep text away from screen edges */
+.content-pad { padding-left: 1.25rem; padding-right: 1.25rem; }
+
+/* Small spacer used on product detail pages to keep footer at bottom when little content */
+.page-bottom-spacer { height: 6rem; }
+
 /* Buttons focus */
 .btn:focus{ outline:2px solid rgba(30,64,175,0.12); outline-offset:2px; }
 
@@ -225,6 +506,31 @@ input, select, button { font-family: inherit; }
 /* Product card image adjustments for grid */
 .product-card .object-contain{ display:block; margin: 0 auto; }
 
+/* Ensure product image area has a consistent sized box so text never overlaps.
+   Use an aspect-ratio box so all images render with the same width/height relationship. */
+.product-card .product-image {
+  width: 100%;
+  height: 180px; /* fixed baseline height to avoid huge images */
+  background: #fff; /* keep consistent background */
+  display: block;
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+@media (min-width: 768px) {
+  .product-card .product-image { height: 200px; }
+}
+@media (min-width: 1200px) {
+  .product-card .product-image { height: 240px; }
+}
+
+/* Limit images so they cannot exceed the container; keep aspect via object-contain */
+.product-card .product-image img { max-width: 100% !important; max-height: 100% !important; object-fit: contain !important; display: block; margin: 0 auto; }
+
+/* Clamp title to two lines and ensure description never floats over image */
+.product-card h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-clamp: 2; }
+.product-card p { margin-top: 0.25rem; }
+
+
 /* prevent annoying yellow selection on login link in overlay */
 .mobile-overlay-pane .login-link, .login-link{ user-select: none; }
 
@@ -234,3 +540,55 @@ input, select, button { font-family: inherit; }
 
 /* product preview page: cap image height and center */
 .product-gallery .swiper-slide img { max-height: 56vh !important; width: auto !important; }
+
+/* Cuenta (account) page polish */
+.account-hero {
+  background: linear-gradient(180deg, #fff 0%, #f3f4f6 100%);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+  /* Center the hero content for the account page so headings and intro copy are in the middle */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+}
+.account-form { align-items: center; text-align: center; }
+.account-form label { display:block; text-align:center; }
+.account-form input { margin: 0 auto; }
+.account-actions { display:flex; flex-direction:column; gap:0.75rem; margin-top:0.5rem; align-items:center; }
+.account-actions .btn { width:100%; padding:0.9rem; border-radius:0.75rem; font-size:1rem; max-width: 420px; }
+@media(min-width:768px){ .account-actions { flex-direction:row; gap:1rem; justify-content:center; } .account-actions .btn { width:auto; flex:0 0 auto } }
+
+/* small mobile icon styles for the navbar */
+.mobile-action { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; }
+.mobile-action svg { color: #fff; }
+
+/* Force cart icon to use site accent (yellow) everywhere */
+.cart-icon, .main-nav .mobile-action .cart-icon { color: var(--accent) !important; stroke: var(--accent) !important; }
+/* For lucide-react icons (they often use stroke rather than fill) force stroke/fill on all inner elements */
+.cart-icon, .main-nav .mobile-action .cart-icon, .cart-icon * { stroke: var(--accent) !important; fill: var(--accent) !important; color: var(--accent) !important; }
+
+/* Accessibility helper: visually hidden but available to screen readers */
+
+/* Heart / wishlist button styles used across product pages and lists */
+.heart-btn{
+  width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:9999px; background: #fff; border:1px solid #e6e6e6; box-shadow: 0 1px 2px rgba(2,6,23,0.06); cursor:pointer;
+}
+.heart-btn:hover{ background:#f8fafc; }
+.heart-btn svg{ width:18px; height:18px; }
+
+/* Footer icons: keep small and consistent across devices */
+.footer-icon svg{ width:16px !important; height:16px !important; }
+
+/* subtle pop animation for heart toggle */
+.heart-pop{ animation: heart-pop .34s cubic-bezier(.2,.9,.3,1); }
+@keyframes heart-pop{
+  0%{ transform: scale(1); }
+  40%{ transform: scale(1.18); }
+  70%{ transform: scale(0.96); }
+  100%{ transform: scale(1); }
+}
+
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+

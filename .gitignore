@@ -25,4 +25,6 @@ dist-ssr
 creds/
 
 
+// ...existing code...
 /creds/firebase-sa.json
+.firebase
